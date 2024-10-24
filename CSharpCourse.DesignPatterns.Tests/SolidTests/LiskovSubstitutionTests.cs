@@ -12,6 +12,11 @@ public class LiskovSubstitutionTests
         return rectangle.CalculateArea() == 50;
     }
     
+    private static bool TestShape(Solid.Good.IShape shape, int expectedArea)
+    {
+        return shape.CalculateArea() == expectedArea;
+    }
+    
     [Fact]
     public void Bad()
     {
@@ -20,5 +25,22 @@ public class LiskovSubstitutionTests
 
         Solid.Bad.Rectangle square = new Solid.Bad.Square();
         Assert.False(TestRectangle(square)); // LSP Violation
+    }
+
+    [Fact]
+    public void Good()
+    {
+        var rect = new Solid.Good.Rectangle
+        {
+            Width = 5,
+            Height = 10
+        };
+        Assert.True(TestShape(rect, 50));
+
+        var square = new Solid.Good.Square
+        {
+            Side = 5
+        };
+        Assert.True(TestShape(square, 25));
     }
 }

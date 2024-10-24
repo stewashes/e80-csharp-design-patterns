@@ -27,4 +27,27 @@ public class OpenClosedTests
         Assert.Equal(25m, finalInvoice.GetInvoiceDiscount());
         Assert.Equal(30m, recurringInvoice.GetInvoiceDiscount());
     }
+    
+    [Fact]
+    public void Good()
+    {
+        var proposedInvoice = new Solid.Good.ProposedInvoice
+        {
+            Amount = 100m
+        };
+
+        var finalInvoice = new Solid.Good.FinalInvoice
+        {
+            Amount = 100m
+        };
+        
+        var recurringInvoice = new Solid.Good.RecurringInvoice
+        {
+            Amount = 100m
+        };
+        
+        Assert.Equal(15m, proposedInvoice.GetInvoiceDiscount());
+        Assert.Equal(25m, finalInvoice.GetInvoiceDiscount());
+        Assert.Equal(30m, recurringInvoice.GetInvoiceDiscount());
+    }
 }
