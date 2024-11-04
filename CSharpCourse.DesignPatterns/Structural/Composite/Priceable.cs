@@ -3,7 +3,7 @@
 // Generic object that can be priced
 internal interface IPriceable
 {
-
+    decimal CalculatePrice();
 }
 
 // Item that can have a price
@@ -15,6 +15,8 @@ internal class Item : IPriceable
     {
         Price = price;
     }
+
+    public decimal CalculatePrice() => Price;
 }
 
 // Box that can have multiple items or other boxes inside it
@@ -26,4 +28,6 @@ internal class Box : IPriceable
     {
         Items = items;
     }
+
+    public decimal CalculatePrice() => Items.Sum(i => i.CalculatePrice());
 }

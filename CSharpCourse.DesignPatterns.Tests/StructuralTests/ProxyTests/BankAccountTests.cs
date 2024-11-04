@@ -21,4 +21,23 @@ public class BankAccountTests
         // or notify transactions above a certain threshold.
         mario.Transfer(1_000_000_000, luigi);
     }
+
+    [Fact]
+    public void ProtectedBankAccount()
+    {
+        var mario = new ProtectedBankAccount(1_000m);
+        var luigi = new ProtectedBankAccount(500m);
+
+        Assert.Throws<UnauthorizedAccessException>(
+            () => mario.Balance = 1_000m);
+
+        Assert.Throws<InvalidOperationException>(
+            () => mario.Transfer(100, mario));
+
+        Assert.Throws<InvalidOperationException>(
+            () => mario.Transfer(-100, luigi));
+
+        Assert.Throws<InvalidOperationException>(
+            () => mario.Transfer(1_001, luigi));
+    }
 }

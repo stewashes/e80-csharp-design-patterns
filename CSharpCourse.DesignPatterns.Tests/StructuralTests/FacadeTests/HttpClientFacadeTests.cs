@@ -20,4 +20,15 @@ public class HttpClientFacadeTests
         Assert.Contains("200 OK", response);
         Assert.Contains("Example Domain", response);
     }
+
+    [Fact]
+    public async Task Simple()
+    {
+        using var httpClient = new MyHttpClient();
+
+        var response = await httpClient.GetAsync("https://example.com");
+
+        Assert.Contains("200 OK", response);
+        Assert.Contains("Example Domain", response);
+    }
 }

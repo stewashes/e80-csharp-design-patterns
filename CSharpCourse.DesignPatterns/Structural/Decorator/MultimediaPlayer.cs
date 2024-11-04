@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CSharpCourse.DesignPatterns.Structural.Decorator;
+﻿namespace CSharpCourse.DesignPatterns.Structural.Decorator;
 
 /*
  * Some languages like C# and Java do not support multiple inheritance.
@@ -34,4 +28,30 @@ internal class VideoPlayer : IVideoPlayer
 {
     public void PlayVideo() => Console.WriteLine("Playing video content...");
     public string Name { get; set; } = string.Empty;
+}
+
+// Implement the two interfaces
+internal class MultimediaPlayer : IAudioPlayer, IVideoPlayer
+{
+    // Keep a reference to the objects we are trying to "inherit" from
+    private readonly AudioPlayer _audioPlayer = new();
+    private readonly VideoPlayer _videoPlayer = new();
+    private string _name = string.Empty;
+
+    // Call the methods on the correct base instance
+    public void PlayAudio() => _audioPlayer.PlayAudio();
+    public void PlayVideo() => _videoPlayer.PlayVideo();
+
+    // If both interfaces implement the same thing, re-implement it
+    // once to satisfy both and keep everything synchronized.
+    public string Name
+    {
+        get => _name;
+        set
+        {
+            _audioPlayer.Name = value;
+            _videoPlayer.Name = value;
+            _name = value;
+        }
+    }
 }

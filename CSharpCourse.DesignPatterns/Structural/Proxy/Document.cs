@@ -23,3 +23,29 @@ internal class Document : IDocument
         Console.WriteLine(Content);
     }
 }
+
+// Proxy class (lazy-loaded)
+internal class DocumentProxy : IDocument
+{
+    private Document? _document;
+    private readonly string _filename;
+
+    public Document? Document => _document;
+
+    public DocumentProxy(string filename)
+    {
+        _filename = filename;
+    }
+
+    public void DisplayContent()
+    {
+        _document ??= new Document(_filename); // Lazy loading
+        _document.DisplayContent();
+    }
+}
+
+// Similarly, a proxy can also be used to
+// - add logging
+// - add caching
+// - mock
+// etc...

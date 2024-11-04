@@ -68,6 +68,27 @@ internal class MyHttpClient : IDisposable
         return responseBuilder.ToString();
     }
 
+    #region Facade
+    public async Task<string> GetAsync(Uri uri)
+    {
+        var host = uri.Host;
+        var path = uri.PathAndQuery;
+        var useSsl = uri.Scheme == "https";
+
+        // Get the IP address
+        var ip = GetIpAddress(host);
+
+        // Connect to the server
+        await ConnectAsync(ip, uri.Port, useSsl);
+
+        // Send the GET request
+        return await SendGetRequestAsync(host, path);
+    }
+
+    public async Task<string> GetAsync(string url)
+        => await GetAsync(new Uri(url));
+    #endregion
+
     public void Dispose()
     {
         Dispose(true);

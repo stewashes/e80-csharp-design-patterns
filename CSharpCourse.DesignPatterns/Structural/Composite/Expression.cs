@@ -2,6 +2,7 @@
 
 internal interface IExpression
 {
+    double Evaluate();
     string ToString();
 }
 
@@ -13,6 +14,8 @@ internal class NumberExpression : IExpression
     {
         this.value = value;
     }
+
+    public double Evaluate() => value;
 
     public override string ToString() => value.ToString();
 }
@@ -35,6 +38,8 @@ internal class BinaryExpression : IExpression
         this.operatorSymbol = operatorSymbol;
         this.operation = operation;
     }
+
+    public double Evaluate() => operation(left.Evaluate(), right.Evaluate());
 
     public override string ToString() => $"({left} {operatorSymbol} {right})";
 }

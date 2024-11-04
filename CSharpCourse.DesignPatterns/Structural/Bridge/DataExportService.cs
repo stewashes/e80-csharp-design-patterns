@@ -197,3 +197,46 @@ internal class AzureBlobStorageProvider : IStorageProvider
     }
 }
 #endregion
+
+// Without the bridge pattern, we would need to have an inheritance hierarchy like this:
+// DataExportService
+//   JsonDataExportService
+//     LocalJsonDataExportService
+//       GzipLocalJsonDataExportService
+//       RawLocalJsonDataExportService
+//     AzureJsonDataExportService
+//       ...
+// This has a cartesian explosion of classes and is not scalable.
+// Total number of classes = 2 * 2 * 2 = 8
+// Instead, we can use composition to keep the number of classes manageable.
+// Total number of classes = 2 + 2 + 2 = 6
+
+#region The Bridge: Export Service
+internal class DataExportService
+{
+    private readonly IDataFormatter _formatter;
+    private readonly ICompressionHandler _compression;
+    private readonly IStorageProvider _storage;
+
+    public DataExportService(
+        IDataFormatter formatter,
+        ICompressionHandler compression,
+        IStorageProvider storage)
+    {
+        _formatter = formatter;
+        _compression = compression;
+        _storage = storage;
+    }
+
+    public async Task<ExportResult> ExportAsync(ExportRequest request)
+    {
+        var formattedData = _formatter.Format(request);
+        var compressedData = await _compression.CompressAsync(formattedData);
+
+        var fileName = $"{request.DataSetName}_{request.Timestamp:yyyyMMddHHmmss}" +
+                         $"{_formatter.FileExtension}{_compression.CompressionExtension}";
+
+        return await _storage.StoreAsync(fileName, compressedData, _formatter.ContentType);
+    }
+}
+#endregion
