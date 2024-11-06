@@ -1,0 +1,16 @@
+@HostAddress = http://localhost:5000
+@ApiKey = demo-api-key-123
+
+### Test without API Key (should fail)
+GET {{HostAddress}}/weatherforecast?city=London
+Accept: application/json
+
+### Test with invalid city (should return 400)
+GET {{HostAddress}}/weatherforecast?city=
+X-API-Key: {{ApiKey}}
+Accept: application/json
+
+### Test with valid request (should succeed). If repeated, it should return cached data
+GET {{HostAddress}}/weatherforecast?city=London
+X-API-Key: {{ApiKey}}
+Accept: application/json
