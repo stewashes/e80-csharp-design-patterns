@@ -4,182 +4,153 @@ namespace CSharpCourse.DesignPatterns.Assignments;
 
 internal class FluentMarkdownBuilder
 {
-    protected readonly StringBuilder Builder;
-
-    public FluentMarkdownBuilder(StringBuilder? builder = null)
-    {
-        Builder = builder ?? new StringBuilder();
-    }
+    private readonly StringBuilder _builder = new();
 
     public FluentMarkdownBuilder AddText(string text)
     {
-        Builder.Append(text);
+        _builder.Append(text);
         return this;
     }
 
     public FluentMarkdownBuilder AddHeader(int headerLevel, string text)
     {
         var prefix = new string(Enumerable.Repeat('#', headerLevel).ToArray());
-        Builder.AppendLine($"{prefix} {text}");
+        _builder
+            .Append(prefix)
+            .Append(' ')
+            .Append(text);
         return this;
     }
 
     public FluentMarkdownBuilder AddBold(string text)
     {
-        Builder.Append($"**{text}**");
+        _builder
+            .Append("**")
+            .Append(text)
+            .Append("**");
         return this;
     }
 
     public FluentMarkdownBuilder AddItalic(string text)
     {
-        Builder.Append($"*{text}*");
+        _builder
+            .Append('*')
+            .Append(text)
+            .Append('*');
         return this;
     }
 
     public FluentMarkdownBuilder AddLink(string name, string url)
     {
-        Builder.Append($"[{name}]({url})");
+        _builder
+            .Append('[')
+            .Append(name)
+            .Append("](")
+            .Append(url)
+            .Append(')');
+        return this;
+    }
+
+    public FluentMarkdownBuilder AddLink(Action<FluentMarkdownBuilder> builder,
+        string link)
+    {
+        var innerBuilder = new FluentMarkdownBuilder();
+        builder.Invoke(innerBuilder);
+        AddLink(innerBuilder.ToString(), link);
+        return this;
+    }
+
+    public FluentMarkdownBuilder AddTable(
+        IEnumerable<string> headers,
+        IEnumerable<IEnumerable<string>> rows)
+    {
+        /* 
+         Sample output:
+
+         |Tables|Are|Cool|
+         |---|---|---|
+         |Hello|World|!!!|
+         |One|Two|Three|
+
+         */
+
+        // Headers
+        _builder
+            .Append('|')
+            .AppendJoin('|', headers)
+            .AppendLine("|");
+
+        // Separator
+        _builder
+            .Append('|')
+            .AppendJoin('|', headers.Select(_ => "---"))
+            .AppendLine("|");
+
+        foreach (var row in rows)
+        {
+            _builder
+                .Append('|')
+                .AppendJoin('|', row)
+                .AppendLine("|");
+        }
+
+        return this;
+    }
+
+    public FluentMarkdownBuilder AddTable(IEnumerable<string> headers,
+        Action<FluentMarkdownTableBuilder> builder)
+    {
+        AddTable(headers, []);
+        var tableBuilder = new FluentMarkdownTableBuilder(_builder);
+        builder.Invoke(tableBuilder);
+
         return this;
     }
 
     public FluentMarkdownBuilder NewLine()
     {
-        Builder.AppendLine();
-        return this;
-    }
-
-    public FluentMarkdownBuilder AddMonoSpace(string text)
-    {
-        Builder.Append("`");
-        Builder.Append(text);
-        Builder.Append("`");
-        return this;
-    }
-
-    public FluentMarkdownBuilder AddTable(string[] header, string[][] rows)
-    {
-        var nColumns = header.Length;
-        
-        for(int i = 0; i < nColumns; i++)
-        {
-            Builder.Append("|");
-            Builder.Append(header[i]);
-        }
-
-        Builder.AppendLine("|");
-
-        //var delimiter = string.Concat(Enumerable.Repeat("|---", nColumns).ToArray());
-        //_builder.Append(delimiter);
-
-        for (int i = 0; i < nColumns; i++)
-        {
-            Builder.Append("|---");
-        }
-
-        Builder.AppendLine("|");
-
-        foreach (var i in rows)
-        {
-            foreach (var j in i)
-            {
-                Builder.Append("|");
-                Builder.Append(j);
-            }
-            
-            Builder.AppendLine("|");
-        }
-        
-        return this;
-    }
-
-
-    public FluentMarkdownBuilder AddTable(string[] headers, Action<TableBuilder> tableBuilderAction)
-    {
-        tableBuilderAction(new TableBuilder(Builder, headers));
+        _builder.AppendLine();
         return this;
     }
 
     public override string ToString()
-        => Builder.ToString();
+        => _builder.ToString();
 }
 
-internal class TableBuilder : FluentMarkdownBuilder
+internal class FluentMarkdownTableBuilder
 {
-    internal TableBuilder(StringBuilder builder, string[] header) : base(builder)
+    private readonly StringBuilder _builder;
+
+    public FluentMarkdownTableBuilder(StringBuilder stringBuilder)
     {
-        //for (int i = 0; i < header.Length; i++)
-        //{
-        //    Builder.Append("|");
-        //    Builder.Append(header[i]);
-        //}
-
-        //Builder.AppendLine("|");
-
-        //var delimiter = string.Concat(Enumerable.Repeat("|---", header.Length).ToArray());
-        //Builder.Append(delimiter);
-        
-        //Builder.AppendLine("|");
-
-        AddRow(row =>
-        {
-            for (int i = 0; i < header.Length; i++)
-            {
-                row.AddCell(cell => cell.AddText(header[i]));
-            }
-        });
-
-        AddRow(row =>
-        {
-            for (int i = 0; i < header.Length; i++)
-            {
-                // row.AddCell(cell => cell.AddText("---"));
-                row.AddEmptyCell();
-            }
-        });
+        _builder = stringBuilder;
     }
 
-    public TableBuilder AddRow(Action<RowBuilder> rowBuilderAction)
+    public FluentMarkdownTableBuilder AddRow(Action<FluentMarkdownRowBuilder> row)
     {
-        rowBuilderAction(new RowBuilder(Builder));
-        Builder.AppendLine("|");
+        _builder.Append('|');
+        var rowBuilder = new FluentMarkdownRowBuilder(_builder);
+        row.Invoke(rowBuilder);
+        _builder.AppendLine();
         return this;
     }
 }
 
-internal class RowBuilder: FluentMarkdownBuilder
+internal class FluentMarkdownRowBuilder
 {
-    internal RowBuilder(StringBuilder builder) : base(builder) { }
+    private readonly StringBuilder _builder;
 
-    public RowBuilder AddCell(Action<CellBuilder> cellBuilderAction)
+    public FluentMarkdownRowBuilder(StringBuilder stringBuilder)
     {
-        Builder.Append("|");
-        cellBuilderAction(new CellBuilder(Builder));
-
-        return this;
+        _builder = stringBuilder;
     }
 
-    public RowBuilder AddEmptyCell()
+    public FluentMarkdownRowBuilder AddCell(Action<FluentMarkdownBuilder> builder)
     {
-        AddCell(cell => cell.AddText("---"));
-
-        return this;
-    }
-}
-
-internal class CellBuilder : FluentMarkdownBuilder
-{
-    internal CellBuilder(StringBuilder builder) : base(builder) { }
-
-    public CellBuilder AddLink(Action<FluentMarkdownBuilder> linkBuilderAction, string link)
-    {
-        Builder.Append("[");
-
-        linkBuilderAction(this);
-
-        Builder.Append("](");
-        Builder.Append(link);
-        Builder.Append(")");
-
+        var innerBuilder = new FluentMarkdownBuilder();
+        builder.Invoke(innerBuilder);
+        _builder.Append(innerBuilder);
+        _builder.Append('|');
         return this;
     }
 }
