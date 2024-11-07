@@ -6,11 +6,19 @@ using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// TODO: Add services to the container.
+// Add services to the container.
+builder.Services.AddMemoryCache();
+builder.Services.AddAuthentication("ApiKey")
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthHandler>("ApiKey", opts => { });
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// TODO: Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline.
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseMiddleware<LoggingMiddleware>();
 
 var summaries = new[]
 {
@@ -18,15 +26,22 @@ var summaries = new[]
 };
 
 // We use minimal APIs instead of controllers
-// TODO: Add authorization
-// TODO: Add caching
-// TODO: Add logging
-app.MapGet("/weatherforecast", async (string? city) =>
+app.MapGet("/weatherforecast", [Authorize] async (string? city, IMemoryCache cache, ILogger<Program> logger) =>
 {
     if (string.IsNullOrWhiteSpace(city))
     {
         throw new InvalidEndpointParametersException("City parameter is required");
     }
+
+    var cacheKey = $"weather_{city}";
+
+    if (cache.TryGetValue(cacheKey, out WeatherForecast[]? cachedForecast))
+    {
+        logger.LogInformation("Returning cached forecast for {City}", city);
+        return cachedForecast;
+    }
+
+    logger.LogInformation("Generating new forecast for {City}", city);
 
     // Simulate a long-running operation
     await Task.Delay(1000);
@@ -39,6 +54,11 @@ app.MapGet("/weatherforecast", async (string? city) =>
             summaries[Random.Shared.Next(summaries.Length)]
         ))
         .ToArray();
+
+    var cacheOptions = new MemoryCacheEntryOptions()
+        .SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
+
+    cache.Set(cacheKey, forecast, cacheOptions);
 
     return forecast;
 });

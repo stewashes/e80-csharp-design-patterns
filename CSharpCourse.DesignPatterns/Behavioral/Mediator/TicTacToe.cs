@@ -56,3 +56,110 @@ internal class TicTacToe
         return true;
     }
 }
+
+// The client is dumb and only sends messages to the server.
+// Its state is updated by the server.
+internal class GameClient
+{
+    private readonly GameServer _server;
+    public char[,] LocalBoard { get; private set; } = new char[3, 3];
+    public char PlayerId { get; private set; }
+    public char CurrentPlayer { get; private set; }
+    public char Winner { get; private set; }
+
+    public GameClient(GameServer server)
+    {
+        _server = server;
+        PlayerId = server.Register(this);
+    }
+
+    public void MakeMove(int row, int col)
+    {
+        if (CurrentPlayer == PlayerId)
+        {
+            _server.SendMove(this, row, col);
+        }
+    }
+
+    public void UpdateGameState(char[,] board, char currentPlayer)
+    {
+        LocalBoard = (char[,])board.Clone();
+        CurrentPlayer = currentPlayer;
+    }
+
+    public void GameOver(char winner)
+    {
+        Winner = winner;
+    }
+}
+
+internal class GameServer
+{
+    private readonly TicTacToe _game = new();
+    private readonly List<GameClient> _clients = [];
+    private char _currentPlayer = 'X';
+    private bool _gameOver;
+
+    public GameServer()
+    {
+        _gameOver = false;
+    }
+
+    // Returns the player id
+    public char Register(GameClient client)
+    {
+        _clients.Add(client);
+        NotifyGameState(_game.GetBoard(), _currentPlayer);
+
+        return _clients.Count switch
+        {
+            1 => 'X',
+            2 => 'O',
+            _ => throw new InvalidOperationException("Too many players")
+        };
+    }
+
+    public void SendMove(GameClient client, int row, int col)
+    {
+        if (_gameOver)
+        {
+            return;
+        }
+
+        if (_game.MakeMove(row, col, _currentPlayer))
+        {
+            if (_game.CheckWin(_currentPlayer))
+            {
+                _gameOver = true;
+                NotifyGameOver(_currentPlayer);
+                return;
+            }
+
+            if (_game.IsBoardFull())
+            {
+                _gameOver = true;
+                NotifyGameOver(TicTacToe.Draw);
+                return;
+            }
+
+            _currentPlayer = _currentPlayer == 'X' ? 'O' : 'X';
+            NotifyGameState(_game.GetBoard(), _currentPlayer);
+        }
+    }
+
+    public void NotifyGameState(char[,] board, char currentPlayer)
+    {
+        foreach (var client in _clients)
+        {
+            client.UpdateGameState(board, currentPlayer);
+        }
+    }
+
+    public void NotifyGameOver(char winner)
+    {
+        foreach (var client in _clients)
+        {
+            client.GameOver(winner);
+        }
+    }
+}
