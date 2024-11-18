@@ -121,4 +121,23 @@ public class RuleVisitorTests
             _ => throw new NotImplementedException(),
         };
     }
+
+    [Fact]
+    public void ClassicVisitor()
+    {
+        var passwordRequirements = new RuleRequirementsBuilder();
+        passwordRequirements.Visit(_passwordRule);
+
+        Assert.Equal(PasswordRequirementsMessage, passwordRequirements.ToString());
+    }
+
+    [Fact]
+    public void GenericVisitor()
+    {
+        var passwordRequirements = new RuleVerifier("admin");
+        Assert.False(passwordRequirements.Visit(_passwordRule));
+
+        passwordRequirements = new RuleVerifier("admin123");
+        Assert.True(passwordRequirements.Visit(_passwordRule));
+    }
 }
