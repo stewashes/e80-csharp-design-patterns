@@ -11,30 +11,38 @@ internal interface IBidirectionalList<T> : IEnumerable<T>
 
 internal class BidirectionalList<T> : IBidirectionalList<T>
 {
-    public int Count => throw new NotImplementedException();
+    private readonly LinkedList<T> _list = new();
+
+    public int Count => _list.Count;
 
     public void Add(T value)
     {
-        throw new NotImplementedException();
+        _list.AddLast(value);
     }
 
     public void AddRange(IEnumerable<T> values)
     {
-        throw new NotImplementedException();
-    }
-
-    public IEnumerable<T> Backward()
-    {
-        throw new NotImplementedException();
+        foreach (var value in values)
+        {
+            Add(value);
+        }
     }
 
     public IEnumerator<T> GetEnumerator()
     {
-        throw new NotImplementedException();
+        return _list.GetEnumerator();
     }
 
-    IEnumerator IEnumerable.GetEnumerator()
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public IEnumerable<T> Backward()
     {
-        throw new NotImplementedException();
+        var node = _list.Last;
+
+        while (node is not null)
+        {
+            yield return node.Value;
+            node = node.Previous;
+        }
     }
 }
